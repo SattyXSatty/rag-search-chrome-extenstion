@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Page for Highlighting</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+        }
+        .section {
+            margin: 30px 0;
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 8px;
+        }
+        code {
+            background: #e0e0e0;
+            padding: 2px 6px;
+            border-radius: 3px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Test Page for Web Memory RAG Highlighting</h1>
+    
+    <div class="section">
+        <h2>About Machine Learning</h2>
+        <p>
+            Machine learning is a subset of artificial intelligence that focuses on 
+            building systems that can learn from data. These systems improve their 
+            performance on specific tasks through experience without being explicitly 
+            programmed.
+        </p>
+        <p>
+            Common machine learning algorithms include neural networks, decision trees, 
+            random forests, and support vector machines. Deep learning, a subset of 
+            machine learning, uses neural networks with multiple layers.
+        </p>
+    </div>
+
+    <div class="section">
+        <h2>Web Development</h2>
+        <p>
+            Web development involves creating websites and web applications. Frontend 
+            development focuses on the user interface using HTML, CSS, and JavaScript. 
+            Backend development handles server-side logic, databases, and APIs.
+        </p>
+        <p>
+            Popular frameworks include React, Vue, Angular for frontend, and Node.js, 
+            Django, Flask for backend development. Modern web development also involves 
+            responsive design, accessibility, and performance optimization.
+        </p>
+    </div>
+
+    <div class="section">
+        <h2>Chrome Extensions</h2>
+        <p>
+            Chrome extensions are small software programs that customize the browsing 
+            experience. They can modify web pages, add functionality to the browser, 
+            and integrate with external services.
+        </p>
+        <p>
+            Extensions use web technologies like HTML, CSS, and JavaScript. Manifest V3 
+            is the latest version of the Chrome extension platform, introducing service 
+            workers and improved security features.
+        </p>
+    </div>
+
+    <div class="section">
+        <h2>Vector Databases</h2>
+        <p>
+            Vector databases like FAISS store and search high-dimensional vectors 
+            efficiently. They're essential for semantic search, recommendation systems, 
+            and similarity matching applications.
+        </p>
+        <p>
+            Embeddings convert text into numerical vectors that capture semantic meaning. 
+            Similar concepts have similar vector representations, enabling powerful 
+            search capabilities beyond keyword matching.
+        </p>
+    </div>
+
+    <div class="section">
+        <h2>Testing Instructions</h2>
+        <ol>
+            <li>Open this page in Chrome</li>
+            <li>Wait 2-3 seconds for the extension to capture content</li>
+            <li>Open the Web Memory RAG extension</li>
+            <li>Search for: <code>machine learning</code></li>
+            <li>Click the result for this page</li>
+            <li>You should see yellow highlights on "machine" and "learning"</li>
+        </ol>
+        <p>
+            Try searching for other terms like "web development", "chrome extensions", 
+            "vector databases", or "embeddings" to test different highlights.
+        </p>
+    </div>
+
+    <div class="section">
+        <h2>Expected Behavior</h2>
+        <ul>
+            <li>✅ Yellow background on matching words</li>
+            <li>✅ Page scrolls to first match</li>
+            <li>✅ Multiple highlights visible</li>
+            <li>✅ Console shows debug messages</li>
+        </ul>
+    </div>
+
+    <script>
+        // Log when page is ready
+        console.log('Test page loaded and ready for highlighting');
+        
+        // Add a test button
+        const testButton = document.createElement('button');
+        testButton.textContent = 'Test Highlight Manually';
+        testButton.style.cssText = 'padding: 10px 20px; font-size: 16px; margin: 20px 0; cursor: pointer;';
+        testButton.onclick = () => {
+            if (typeof chrome !== 'undefined' && chrome.runtime) {
+                chrome.runtime.sendMessage({
+                    type: 'HIGHLIGHT_TEXT',
+                    text: 'machine learning neural networks'
+                });
+            } else {
+                alert('Extension not loaded or not available');
+            }
+        };
+        document.body.appendChild(testButton);
+    </script>
+</body>
+</html>

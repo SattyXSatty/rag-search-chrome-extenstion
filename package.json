@@ -1,0 +1,28 @@
+{
+  "name": "web-memory-rag-cognitive",
+  "version": "2.0.0",
+  "description": "Chrome extension for capturing and searching web content using RAG with Cognitive AI",
+  "scripts": {
+    "build": "echo 'No build step required for basic extension'",
+    "setup-icons": "mkdir -p icons && echo 'Add icon16.png, icon48.png, icon128.png to icons folder'",
+    "backend": "cd backend && python server.py",
+    "test-cognitive": "cd backend && python test_cognitive.py",
+    "setup-backend": "cd backend && pip install -r requirements.txt"
+  },
+  "keywords": [
+    "chrome-extension",
+    "rag",
+    "embeddings",
+    "search",
+    "faiss",
+    "cognitive-ai",
+    "gemini",
+    "multi-agent",
+    "pydantic"
+  ],
+  "author": "",
+  "license": "MIT",
+  "engines": {
+    "python": ">=3.8"
+  }
+}

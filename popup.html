@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Web Memory RAG</title>
+  <style>
+    body {
+      width: 450px;
+      min-height: 500px;
+      margin: 0;
+      padding: 16px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #f5f5f5;
+    }
+    
+    .header {
+      margin-bottom: 16px;
+    }
+    
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 20px;
+      color: #333;
+    }
+    
+    .search-box {
+      position: relative;
+      margin-bottom: 16px;
+      display: flex;
+      gap: 8px;
+    }
+    
+    #searchInput {
+      flex: 1;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    
+    .search-btn {
+      padding: 12px 20px;
+      border: 2px solid #4285f4;
+      border-radius: 8px;
+      background: #4285f4;
+      color: white;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+      white-space: nowrap;
+    }
+    
+    .search-btn:hover {
+      background: #3367d6;
+      border-color: #3367d6;
+    }
+    
+    .search-btn:active {
+      transform: scale(0.98);
+    }
+    
+    #searchInput:focus {
+      outline: none;
+      border-color: #4285f4;
+    }
+    
+    .filters {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    
+    .filter-btn {
+      padding: 6px 12px;
+      border: 1px solid #ddd;
+      border-radius: 16px;
+      background: white;
+      cursor: pointer;
+      font-size: 12px;
+      transition: all 0.2s;
+    }
+    
+    .filter-btn:hover {
+      background: #f0f0f0;
+    }
+    
+    .filter-btn.active {
+      background: #4285f4;
+      color: white;
+      border-color: #4285f4;
+    }
+    
+    .results {
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    
+    .result-item {
+      background: white;
+      padding: 12px;
+      margin-bottom: 8px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: 1px solid #e0e0e0;
+    }
+    
+    .result-item:hover {
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      transform: translateY(-1px);
+    }
+    
+    .result-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .result-favicon {
+      width: 16px;
+      height: 16px;
+    }
+    
+    .result-title {
+      font-weight: 600;
+      font-size: 14px;
+      color: #1a73e8;
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .result-category {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: #e8f0fe;
+      color: #1967d2;
+      border-radius: 4px;
+    }
+    
+    .result-snippet {
+      font-size: 13px;
+      color: #5f6368;
+      line-height: 1.4;
+      margin-bottom: 4px;
+    }
+    
+    .result-url {
+      font-size: 11px;
+      color: #70757a;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    
+    .no-results {
+      text-align: center;
+      padding: 40px 20px;
+      color: #70757a;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 20px;
+      color: #70757a;
+    }
+    
+    .stats {
+      font-size: 12px;
+      color: #70757a;
+      margin-bottom: 4px;
+    }
+    
+    .backend-status {
+      font-size: 11px;
+      color: #70757a;
+      margin-bottom: 12px;
+    }
+    
+    .comparison-header {
+      background: #e8f0fe;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    
+    .comparison-header h3 {
+      margin: 0;
+      font-size: 14px;
+      color: #1967d2;
+    }
+    
+    .comparison-item {
+      border-left: 3px solid #4285f4;
+    }
+    
+    .rank {
+      font-weight: bold;
+      color: #4285f4;
+      margin-right: 4px;
+    }
+    
+    .similarity-badge {
+      font-size: 10px;
+      padding: 2px 6px;
+      background: #34a853;
+      color: white;
+      border-radius: 4px;
+      margin-left: auto;
+    }
+    
+    .match-count {
+      font-size: 11px;
+      color: #5f6368;
+      margin-top: 4px;
+      font-style: italic;
+    }
+    
+    .compare-btn {
+      background: #4285f4;
+      color: white;
+      border-color: #4285f4;
+    }
+    
+    .compare-btn:hover {
+      background: #3367d6;
+    }
+    
+    .compare-btn.active {
+      background: #34a853;
+      border-color: #34a853;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>🧠 Web Memory</h1>
+    <div class="stats" id="stats">Loading...</div>
+    <div class="backend-status" id="backendStatus">Checking backend...</div>
+  </div>
+  
+  <div class="search-box">
+    <input type="text" id="searchInput" placeholder="Search your browsing history... (press Enter)" autofocus>
+    <button id="searchBtn" class="search-btn">🔍 Search</button>
+  </div>
+  
+  <div class="filters" id="filters">
+    <button class="filter-btn active" data-category="all">All</button>
+    <button class="filter-btn" data-category="ecommerce">🛒 Shopping</button>
+    <button class="filter-btn" data-category="news">📰 News</button>
+    <button class="filter-btn" data-category="documentation">📚 Docs</button>
+    <button class="filter-btn" data-category="social">👥 Social</button>
+    <button class="filter-btn" data-category="video">🎥 Video</button>
+    <button class="filter-btn compare-btn" id="compareBtn" style="display:none;">⚖️ Compare</button>
+  </div>
+  
+  <div class="results" id="results">
+    <div class="no-results">Start typing to search your browsing history</div>
+  </div>
+  
+  <script src="popup.js"></script>
+</body>
+</html>
