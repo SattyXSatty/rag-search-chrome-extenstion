@@ -57,14 +57,14 @@ Provide JSON response with:
    - comparative: Compare multiple items (for shopping)
 
 2. search_params: {{
-     "query_text": "optimized query string",
+     "query_text": "USE ORIGINAL QUERY - DO NOT EXPAND OR MODIFY",
      "k": number of results (20-100),
      "category_filter": "category name or null",
      "time_window_days": number or null
    }}
 
 3. filters: {{
-     "min_similarity": 0.0-1.0 (IMPORTANT: Use 0.0-0.3 for general search, 0.4-0.6 for specific recall),
+     "min_similarity": 0.0-1.0 (RECOMMENDED: 0.65-0.75 for high precision, 0.75-0.85 for very strict),
      "categories": ["list", "of", "categories"],
      "exclude_urls": ["urls", "to", "exclude"]
    }}
@@ -83,13 +83,13 @@ Example for "laptop I saw yesterday":
 {{
   "strategy": "temporal",
   "search_params": {{
-    "query_text": "laptop notebook computer",
+    "query_text": "laptop",
     "k": 50,
     "category_filter": "ecommerce",
     "time_window_days": 2
   }},
   "filters": {{
-    "min_similarity": 0.3,
+    "min_similarity": 0.7,
     "categories": ["ecommerce"],
     "exclude_urls": []
   }},

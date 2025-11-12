@@ -191,7 +191,7 @@ function displayResults(results) {
   const searchQuery = document.getElementById('searchInput').value;
   
   resultsDiv.innerHTML = results.map(result => `
-    <div class="result-item" data-url="${escapeHtml(result.url)}" data-query="${escapeHtml(searchQuery)}">
+    <div class="result-item" data-url="${escapeHtml(result.url)}" data-query="${escapeHtml(searchQuery)}" data-snippet="${escapeHtml(result.matches[0].text)}">
       <div class="result-header">
         ${result.favicon ? `<img src="${escapeHtml(result.favicon)}" class="result-favicon" onerror="this.style.display='none'">` : ''}
         <div class="result-title">${escapeHtml(result.title || 'Untitled')}</div>
@@ -211,8 +211,9 @@ function displayResults(results) {
       e.stopPropagation();
       console.log('🖱️ Result clicked!', item.dataset.url);
       console.log('🔍 Query:', item.dataset.query);
+      console.log('📄 Snippet:', item.dataset.snippet);
       
-      // Call openAndHighlight synchronously
+      // Use the original search query for highlighting (not the snippet)
       openAndHighlight(item.dataset.url, item.dataset.query);
     });
   });
@@ -254,6 +255,7 @@ function displayComparisonResults(results) {
   // Add click handlers
   document.querySelectorAll('.result-item').forEach(item => {
     item.addEventListener('click', () => {
+      // Use the original search query for highlighting (not the snippet)
       openAndHighlight(item.dataset.url, item.dataset.query);
     });
   });

@@ -166,22 +166,35 @@ async function handleScheduledHighlight(tabId, text, url) {
 function highlightTextInPage(searchQuery) {
     console.log('🎨 Highlighting in page:', searchQuery);
     
-    // Extract words (4+ characters)
-    const words = searchQuery.toLowerCase().match(/\b\w{4,}\b/g) || [];
-    console.log('Looking for words:', words);
-    
-    if (words.length === 0) {
-        console.log('No words to highlight');
-        return;
-    }
-    
-    // Remove old highlights
+    // Remove old highlights first
     document.querySelectorAll('.web-memory-highlight').forEach(el => {
         const text = document.createTextNode(el.textContent);
         el.parentNode.replaceChild(text, el);
     });
     
-    // Find and highlight text nodes
+    // Normalize the search query
+    const queryLower = searchQuery.toLowerCase().trim();
+    if (!queryLower) {
+        console.log('Empty query, nothing to highlight');
+        return;
+    }
+    
+    // Extract meaningful words (5+ characters to avoid common words)
+    const words = queryLower.match(/\b\w{5,}\b/g) || [];
+    console.log('Looking for words:', words);
+    
+    if (words.length === 0) {
+        console.log('No significant words to highlight');
+        return;
+    }
+    
+    // Limit to top 5 most distinctive words to avoid over-highlighting
+    const distinctiveWords = words.slice(0, 5);
+    console.log('Using distinctive words:', distinctiveWords);
+    
+    // Find text nodes that contain at least 2 of the search words (or 1 if only 1 word)
+    const minMatches = distinctiveWords.length === 1 ? 1 : 2;
+    
     const walker = document.createTreeWalker(
         document.body,
         NodeFilter.SHOW_TEXT,
@@ -189,6 +202,8 @@ function highlightTextInPage(searchQuery) {
             acceptNode: function(node) {
                 if (node.parentElement.tagName === 'SCRIPT' || 
                     node.parentElement.tagName === 'STYLE' ||
+                    node.parentElement.tagName === 'NOSCRIPT' ||
+                    node.parentElement.classList.contains('web-memory-highlight') ||
                     !node.textContent.trim()) {
                     return NodeFilter.FILTER_REJECT;
                 }
@@ -202,17 +217,27 @@ function highlightTextInPage(searchQuery) {
     
     while (node = walker.nextNode()) {
         const textLower = node.textContent.toLowerCase();
-        const hasMatch = words.some(word => textLower.includes(word));
-        if (hasMatch) {
-            nodesToHighlight.push(node);
+        
+        // Count how many search words appear in this node
+        const matchCount = distinctiveWords.filter(word => textLower.includes(word)).length;
+        
+        if (matchCount >= minMatches) {
+            nodesToHighlight.push({
+                node: node,
+                matchCount: matchCount
+            });
         }
     }
     
-    console.log('Found nodes to highlight:', nodesToHighlight.length);
+    // Sort by match count (highest first) and limit to top 20 nodes
+    nodesToHighlight.sort((a, b) => b.matchCount - a.matchCount);
+    const topNodes = nodesToHighlight.slice(0, 20);
     
-    // Highlight nodes
+    console.log(`Found ${nodesToHighlight.length} matching nodes, highlighting top ${topNodes.length}`);
+    
+    // Highlight the top matching nodes
     let firstHighlight = null;
-    nodesToHighlight.slice(0, 50).forEach(node => {
+    topNodes.forEach(({ node, matchCount }) => {
         try {
             const span = document.createElement('span');
             span.className = 'web-memory-highlight';
@@ -242,6 +267,8 @@ function highlightTextInPage(searchQuery) {
             });
             console.log('✅ Scrolled to first highlight');
         }, 100);
+    } else {
+        console.log('⚠️ No highlights created');
     }
 }
 

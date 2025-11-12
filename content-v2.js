@@ -75,19 +75,20 @@ function chunkText(text, chunkSize) {
 
 // Highlight text on page
 function highlightText(searchText, chunkIndex) {
-  console.log('Highlighting text:', searchText.substring(0, 100));
+  console.log('Highlighting snippet:', searchText.substring(0, 100));
   removeHighlights();
   
-  // Extract key words from search text (at least 4 chars)
-  const words = searchText.toLowerCase()
-    .match(/\b\w{4,}\b/g) || [];
+  // Extract words from snippet (at least 5 chars to avoid common short words)
+  const allWords = searchText.toLowerCase().match(/\b\w{5,}\b/g) || [];
   
-  if (words.length === 0) {
-    console.log('No words to highlight');
-    return;
-  }
+  // Filter out ONLY the most common words
+  const veryCommonWords = new Set(['india', 'women', 'national', 'cricket', 'team']);
+  const filteredWords = allWords.filter(word => !veryCommonWords.has(word));
   
-  console.log('Looking for words:', words.slice(0, 5));
+  // Take only the top 3 words to avoid over-highlighting
+  const snippetWords = filteredWords.length > 0 ? filteredWords.slice(0, 3) : allWords.slice(0, 3);
+  
+  console.log('✨ Distinctive words for highlighting:', snippetWords, '(filtered from', allWords.length, 'total words)');
   
   // Find text nodes containing any of the words
   const walker = document.createTreeWalker(
@@ -114,25 +115,45 @@ function highlightText(searchText, chunkIndex) {
   
   while (node = walker.nextNode()) {
     const textLower = node.textContent.toLowerCase();
-    // Check if node contains any of our search words
-    const hasMatch = words.some(word => textLower.includes(word));
     
-    if (hasMatch) {
-      nodesToHighlight.push(node);
+    // Count how many snippet words appear in this node
+    const matchingWords = snippetWords.filter(word => textLower.includes(word));
+    const matchRatio = matchingWords.length / snippetWords.length;
+    
+    // Only highlight nodes that contain MOST of the distinctive words
+    // This ensures we only highlight the most relevant section
+    if (matchRatio >= 0.67) {  // At least 67% of words (2 out of 3)
+      nodesToHighlight.push({
+        node: node,
+        matchRatio: matchRatio,
+        matchCount: matchingWords.length
+      });
     }
   }
   
-  console.log('Found nodes to highlight:', nodesToHighlight.length);
+  console.log('Found candidate nodes:', nodesToHighlight.length);
   
   if (nodesToHighlight.length === 0) {
     console.log('No matching text found on page');
     return;
   }
   
+  // Sort by match ratio (nodes with more snippet words rank higher)
+  nodesToHighlight.sort((a, b) => {
+    if (b.matchRatio !== a.matchRatio) {
+      return b.matchRatio - a.matchRatio;
+    }
+    return b.matchCount - a.matchCount;
+  });
+  
+  // Take top 5 nodes (most similar to snippet)
+  const topNodes = nodesToHighlight.slice(0, 5).map(item => item.node);
+  
+  console.log('Highlighting top 5 nodes most similar to snippet');
+  
   // Highlight nodes
   let firstHighlight = null;
-  nodesToHighlight.forEach((node, index) => {
-    if (index > 50) return; // Limit to 50 highlights
+  topNodes.forEach((node, index) => {
     
     try {
       const span = document.createElement('span');
@@ -210,7 +231,7 @@ function isExtensionContextValid() {
 }
 
 // Log that content script is loaded
-console.log('🧠 Web Memory RAG content script loaded');
+console.log('🧠 Web Memory RAG content script loaded v2.0.1 - NEW VERSION');
 
 // Capture content on page load
 if (document.readyState === 'loading') {

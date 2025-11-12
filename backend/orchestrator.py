@@ -4,6 +4,7 @@ from perception import PerceptionAgent
 from memory import MemoryAgent
 from decision import DecisionAgent
 from actions import ActionsAgent
+from answer_verification import AnswerVerifier
 from datetime import datetime
 import os
 
@@ -24,6 +25,7 @@ class CognitiveOrchestrator:
         self.memory = MemoryAgent()
         self.decision = DecisionAgent(api_key=self.api_key)
         self.actions = ActionsAgent(index, metadata_store, embedding_model)
+        self.verifier = AnswerVerifier(api_key=self.api_key)
         
         print("✅ Cognitive AI Orchestrator initialized")
         print(f"   - Perception: Gemini 2.0 Flash")
@@ -56,6 +58,7 @@ class CognitiveOrchestrator:
         print(f"   Expanded: {enhanced_query.expanded_terms[:3]}")
         print(f"   Confidence: {enhanced_query.confidence:.2f}")
         print(f"   Reasoning: {enhanced_query.reasoning[:80]}...")
+        print(f"   Will verify: {enhanced_query.intent in ['search', 'recall']}")
         
         # Step 2: Memory - Get context
         print(f"\n2️⃣ MEMORY: Loading user context...")
@@ -74,6 +77,10 @@ class CognitiveOrchestrator:
             search_history
         )
         
+        # IMPORTANT: Use original query, not expanded version
+        # The expanded query dilutes search results
+        search_decision.search_params['query_text'] = enhanced_query.original_query
+        
         print(f"   Strategy: {search_decision.strategy}")
         print(f"   Query text: {search_decision.search_params.get('query_text', '')[:50]}")
         print(f"   Results: {search_decision.search_params.get('k', 50)}")
@@ -87,6 +94,44 @@ class CognitiveOrchestrator:
         print(f"   Found: {search_response.total_found} results")
         print(f"   Processing time: {search_response.processing_time:.3f}s")
         print(f"   Suggestions: {search_response.suggestions}")
+        
+        # Step 4.5: Verify if results actually answer the question
+        # Check if it's a factual question
+        question_starters = ['who', 'what', 'when', 'where', 'why', 'how', 'which', 'whose']
+        is_specific_question = any(query.lower().startswith(word) for word in question_starters) or '?' in query
+        
+        try:
+            if search_response.results and is_specific_question and enhanced_query.intent in ['search', 'recall']:
+                print(f"\n4️⃣.5 VERIFICATION: Checking if results answer the question...")
+                verification = self.verifier.verify_results(query, search_response.results)
+                
+                print(f"   Has answer: {verification['has_answer']}")
+                print(f"   Confidence: {verification['confidence']:.2f}")
+                print(f"   Reasoning: {verification['reasoning'][:80]}...")
+                
+                # Filter out if no answer (even with low confidence for specific questions)
+                if not verification['has_answer']:
+                    if verification['confidence'] > 0.5 or is_specific_question:
+                        print(f"   ⚠️ Results don't answer the question - returning empty")
+                        search_response.results = []
+                        search_response.total_found = 0
+                        search_response.suggestions = [
+                            "No results contain the answer to your question",
+                            "Try rephrasing your query",
+                            "The information might not be in your browsing history"
+                        ]
+                    else:
+                        print(f"   ⚠️ Very low confidence no answer - keeping results anyway")
+                elif verification['relevant_results']:
+                    # Only return results that actually answer
+                    original_count = len(search_response.results)
+                    search_response.results = verification['relevant_results']
+                    search_response.total_found = len(verification['relevant_results'])
+                    if len(verification['relevant_results']) < original_count:
+                        print(f"   Filtered: {original_count} → {len(verification['relevant_results'])} relevant results")
+        except Exception as e:
+            print(f"   ⚠️ Verification error: {e}")
+            print(f"   Continuing with unverified results")
         
         # Step 5: Memory - Record search
         print(f"\n5️⃣ MEMORY: Recording search...")

@@ -22,6 +22,9 @@ class ActionsAgent:
         
         # 1. Embed query
         query_text = decision.search_params.get('query_text', '')
+        
+        print(f"   🔍 Query: '{query_text}'")
+        
         query_embedding = self.model.encode(
             [query_text],
             convert_to_numpy=True,
@@ -41,9 +44,7 @@ class ActionsAgent:
         
         # Log filter settings
         min_sim_requested = decision.filters.get('min_similarity', 0.0)
-        min_sim_actual = min(min_sim_requested, 0.3)
-        if min_sim_requested > 0.3:
-            print(f"   ⚠️ Similarity threshold capped: {min_sim_requested:.2f} → {min_sim_actual:.2f}")
+        print(f"   🎯 Similarity threshold: {min_sim_requested:.2f}")
         
         for i, idx in enumerate(indices[0]):
             if idx != -1 and int(idx) in self.metadata_store:
@@ -64,15 +65,21 @@ class ActionsAgent:
                         filtered_count['temporal'] += 1
                         continue
                 
-                # Apply similarity threshold (cap at 0.3 to prevent over-filtering)
-                min_sim = min(decision.filters.get('min_similarity', 0.0), 0.3)
-                if float(distances[0][i]) < min_sim:
+                # Pure semantic similarity
+                semantic_sim = float(distances[0][i])
+                
+                # Apply similarity threshold - use very low threshold for better recall
+                requested_sim = decision.filters.get('min_similarity', 0.0)
+                # Cap at 0.35 maximum to ensure we get results
+                min_sim = min(requested_sim, 0.35) if requested_sim > 0 else 0.25
+                
+                if semantic_sim < min_sim:
                     filtered_count['similarity'] += 1
                     continue
                 
                 raw_results.append({
                     'metadata': meta,
-                    'similarity': float(distances[0][i]),
+                    'similarity': semantic_sim,
                     'index': int(idx)
                 })
                 
@@ -80,10 +87,12 @@ class ActionsAgent:
                     break
         
         # Log filtering stats
+        total_candidates = len(indices[0])
         if sum(filtered_count.values()) > 0:
             print(f"   Filtered: {filtered_count['category']} by category, "
                   f"{filtered_count['temporal']} by time, "
                   f"{filtered_count['similarity']} by similarity")
+            print(f"   Total candidates: {total_candidates}, Passed: {len(raw_results)}")
         
         # 4. Rerank if needed
         if decision.strategy in ['hybrid', 'comparative', 'temporal']:

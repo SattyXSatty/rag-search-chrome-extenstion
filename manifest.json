@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Web Memory RAG",
-  "version": "1.0.0",
+  "version": "2.0.8",
   "description": "Capture and search web content using RAG with embeddings",
   "permissions": [
     "storage",
@@ -18,7 +18,7 @@
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"],
+      "js": ["content-v2.js"],
       "run_at": "document_idle"
     }
   ],
